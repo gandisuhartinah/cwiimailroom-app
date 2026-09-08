@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mailroom & Inventory Portal - Purple Shopee Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-purple-shopee { background-color: #7e22ce; }
+        .hover\:bg-purple-shopee-dark:hover { background-color: #6b21a8; }
+        .text-purple-shopee { color: #7e22ce; }
+        .border-purple-shopee { border-color: #7e22ce; }
+        .focus\:ring-purple-shopee:focus { --tw-ring-color: #7e22ce; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-purple-shopee text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl font-bold tracking-wider">📦 CWTII MAILROOM</span>
+                <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full font-medium">Inventory Portal</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="user-info" class="text-sm bg-purple-950/40 px-3 py-1.5 rounded-lg border border-white/10 hidden">
+                    <span id="display-user-dept" class="font-semibold"></span> | <span id="display-user-nrk"></span>
+                </div>
+                <button onclick="openCartModal()" class="relative bg-white text-purple-shopee px-4 py-2 rounded-lg font-semibold shadow hover:bg-slate-100 flex items-center space-x-2 transition">
+                    <span>🛒 Keranjang</span>
+                    <span id="cart-badge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button id="nav-logout-btn" onclick="logoutUser()" class="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-2 rounded-lg font-medium transition hidden">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- Login / Identity Modal / View -->
+        <div id="login-view" class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-10">
+            <h2 class="text-2xl font-bold text-slate-900 mb-2 text-center">Masuk ke Mailroom</h2>
+            <p class="text-slate-500 text-sm text-center mb-6">Silakan masukkan identitas Anda untuk melanjutkan.</p>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Departemen / Bagian</label>
+                    <input type="text" id="login-dept" required placeholder="Contoh: Lean / HR / Production" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-shopee">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">NRK / NIK Karyawan</label>
+                    <input type="text" id="login-nrk" required placeholder="Contoh: 12345" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-shopee">
+                </div>
+                <button type="submit" class="w-full bg-purple-shopee hover:bg-purple-shopee-dark text-white font-bold py-2.5 rounded-lg transition shadow-md">Masuk Portal</button>
+            </form>
+        </div>
+
+        <!-- Dashboard / App View -->
+        <div id="app-view" class="hidden space-y-6">
+            
+            <!-- Controls Bar (Search & Admin Action) -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm">
+                <div class="w-full sm:w-1/3">
+                    <input type="text" id="search-input" oninput="renderCatalog()" placeholder="Cari barang atau dokumen..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-shopee text-sm">
+                </div>
+                <div id="admin-controls" class="flex items-center space-x-2 w-full sm:w-auto justify-end hidden">
+                    <button onclick="openAddItemModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+ Tambah Barang Baru</button>
+                    <button onclick="exportReport()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">📊 Export Data</button>
+                </div>
+            </div>
+
+            <!-- Item Catalog Grid -->
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Katalog Barang & Inventaris</h3>
+                <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Dynamic Items via JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-purple-shopee text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Keranjang Permintaan</h3>
+                <button onclick="closeCartModal()" class="text-white hover:text-slate-200 text-xl font-bold">&times;</button>
+            </div>
+            <div id="cart-items-container" class="p-6 overflow-y-auto flex-grow space-y-4 divide-y divide-slate-100">
+                <!-- Cart items list -->
+            </div>
+            <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
+                <span class="text-sm font-medium text-slate-600">Total Jenis Item: <strong id="cart-total-items">0</strong></span>
+                <div class="space-x-2">
+                    <button onclick="closeCartModal()" class="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">Tutup</button>
+                    <button onclick="checkoutCart()" class="px-4 py-2 bg-purple-shopee hover:bg-purple-shopee-dark text-white rounded-lg text-sm font-semibold shadow">Kirim Permintaan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal (Admin) -->
+    <div id="add-item-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+            <div class="bg-purple-shopee text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Tambah Barang Baru</h3>
+                <button onclick="closeAddItemModal()" class="text-white hover:text-slate-200 text-xl font-bold">&times;</button>
+            </div>
+            <form onsubmit="handleAddNewItem(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Barang</label>
+                    <input type="text" id="new-item-name" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-shopee text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Stok Awal</label>
+                    <input type="number" id="new-item-stock" min="0" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-shopee text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Foto Barang</label>
+                    <input type="file" id="new-item-image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-shopee hover:file:bg-purple-100">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeAddItemModal()" class="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-shopee hover:bg-purple-shopee-dark text-white rounded-lg text-sm font-semibold shadow">Simpan Barang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('cwtii_mailroom_user')) || null;
+        let inventory = JSON.parse(localStorage.getItem('cwtii_mailroom_inventory')) || [
+            { id: 1, name: 'Kertas HVS A4 80gsm', stock: 15, image: '' },
+            { id: 2, name: 'Amplop Coklat Kabinet', stock: 8, image: '' },
+            { id: 3, name: 'Pulpen Hitam Standard', stock: 25, image: '' },
+            { id: 4, name: 'Marker Permanen Hitam', stock: 4, image: '' }
+        ];
+        let cart = JSON.parse(localStorage.getItem('cwtii_mailroom_cart')) || [];
+
+        window.onload = function() {
+            if (currentUser) {
+                showAppView();
+            }
+        };
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const dept = document.getElementById('login-dept').value.trim();
+            const nrk = document.getElementById('login-nrk').value.trim();
+            currentUser = { dept, nrk, role: nrk.toLowerCase() === 'admin' ? 'admin' : 'employee' };
+            localStorage.setItem('cwtii_mailroom_user', JSON.stringify(currentUser));
+            showAppView();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('cwtii_mailroom_user');
+            currentUser = null;
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('nav-logout-btn').classList.add('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+        }
+
+        function showAppView() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('nav-logout-btn').classList.remove('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('display-user-dept').innerText = currentUser.dept;
+            document.getElementById('display-user-nrk').innerText = `NRK: ${currentUser.nrk}`;
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-controls').classList.remove('hidden');
+            } else {
+                document.getElementById('admin-controls').classList.add('hidden');
+            }
+            renderCatalog();
+            updateCartBadge();
+        }
+
+        function renderCatalog() {
+            const grid = document.getElementById('catalog-grid');
+            const keyword = document.getElementById('search-input').value.toLowerCase();
+            grid.innerHTML = '';
+
+            const filtered = inventory.filter(item => item.name.toLowerCase().includes(keyword));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">Tidak ada barang ditemukan.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const isLowStock = item.stock < 10;
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between transition hover:shadow-md";
+                card.innerHTML = `
+                    <div>
+                        <div class="h-40 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                            ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover">` : `<span class="text-slate-400 text-sm">Tanpa Foto</span>`}
+                            ${isLowStock ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold shadow">Stok Menipis</span>` : ''}
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-bold text-slate-800 text-base mb-1 truncate">${item.name}</h4>
+                            <p class="text-sm text-slate-500">Stok Tersedia: <strong class="${isLowStock ? 'text-red-600' : 'text-slate-700'}">${item.stock}</strong></p>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0 flex flex-col gap-2">
+                        ${currentUser.role === 'admin' ? `
+                            <div class="flex items-center space-x-2">
+                                <input type="number" id="stock-input-${item.id}" value="${item.stock}" min="0" class="w-20 px-2 py-1 border rounded text-sm text-center">
+                                <button onclick="updateStock(${item.id})" class="flex-grow bg-slate-800 hover:bg-slate-900 text-white text-xs py-1.5 px-3 rounded font-medium transition">Update Stok</button>
+                            </div>
+                        ` : `
+                            <button onclick="addToCart(${item.id})" ${item.stock <= 0 ? 'disabled' : ''} class="w-full bg-purple-shopee hover:bg-purple-shopee-dark disabled:bg-slate-300 text-white font-medium py-2 rounded-lg text-sm transition shadow-sm">
+                                ${item.stock > 0 ? '+ Tambah ke Permintaan' : 'Stok Habis'}
+                            </button>
+                        `}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateStock(id) {
+            const inputVal = parseInt(document.getElementById(`stock-input-${id}`).value);
+            if (isNaN(inputVal) || inputVal < 0) {
+                alert('Jumlah stok tidak valid!');
+                return;
+            }
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                item.stock = inputVal;
+                localStorage.setItem('cwtii_mailroom_inventory', JSON.stringify(inventory));
+                renderCatalog();
+                alert('Stok berhasil diperbarui!');
+            }
+        }
+
+        function addToCart(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item || item.stock <= 0) return;
+
+            const existing = cart.find(c => c.id === id);
+            if (existing) {
+                if (existing.qty < item.stock) {
+                    existing.qty++;
+                } else {
+                    alert('Jumlah melebihi stok yang tersedia!');
+                    return;
+                }
+            } else {
+                cart.push({ id: item.id, name: item.name, qty: 1 });
+            }
+            localStorage.setItem('cwtii_mailroom_cart', JSON.stringify(cart));
+            updateCartBadge();
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cart-badge');
+            const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
+            if (totalQty > 0) {
+                badge.innerText = totalQty;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function openCartModal() {
+            const container = document.getElementById('cart-items-container');
+            container.innerHTML = '';
+            document.getElementById('cart-total-items').innerText = cart.length;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 py-6">Keranjang permintaan masih kosong.</p>`;
+            } else {
+                cart.forEach((ci, index) => {
+                    const row = document.createElement('div');
+                    row.className = "py-3 flex justify-between items-center";
+                    row.innerHTML = `
+                        <div>
+                            <h5 class="font-bold text-slate-800 text-sm">${ci.name}</h5>
+                            <span class="text-xs text-slate-500">Jumlah: ${ci.qty}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="decreaseCartQty(${index})" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 font-bold rounded flex items-center justify-center text-slate-700">-</button>
+                            <span class="text-sm font-semibold w-6 text-center">${ci.qty}</span>
+                            <button onclick="increaseCartQty(${index})" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 font-bold rounded flex items-center justify-center text-slate-700">+</button>
+                            <button onclick="removeCartItem(${index})" class="text-red-500 hover:text-red-700 text-xs font-semibold ml-2">Hapus</button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+            document.getElementById('cart-modal').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cart-modal').classList.add('hidden');
+        }
+
+        function increaseCartQty(index) {
+            const cartItem = cart[index];
+            const invItem = inventory.find(i => i.id === cartItem.id);
+            if (cartItem.qty < invItem.stock) {
+                cartItem.qty++;
+                localStorage.setItem('cwtii_mailroom_cart', JSON.stringify(cart));
+                openCartModal();
+                updateCartBadge();
+            } else {
+                alert('Stok maksimum tercapai!');
+            }
+        }
+
+        function decreaseCartQty(index) {
+            if (cart[index].qty > 1) {
+                cart[index].qty--;
+            } else {
+                cart.splice(index, 1);
+            }
+            localStorage.setItem('cwtii_mailroom_cart', JSON.stringify(cart));
+            openCartModal();
+            updateCartBadge();
+        }
+
+        function removeCartItem(index) {
+            cart.splice(index, 1);
+            localStorage.setItem('cwtii_mailroom_cart', JSON.stringify(cart));
+            openCartModal();
+            updateCartBadge();
+        }
+
+        function checkoutCart() {
+            if (cart.length === 0) return;
+            cart.forEach(ci => {
+                const invItem = inventory.find(i => i.id === ci.id);
+                if (invItem) {
+                    invItem.stock -= ci.qty;
+                }
+            });
+            localStorage.setItem('cwtii_mailroom_inventory', JSON.stringify(inventory));
+            
+            alert(`Permintaan berhasil dikirim!\nDepartemen: ${currentUser.dept}\nNRK: ${currentUser.nrk}`);
+            cart = [];
+            localStorage.removeItem('cwtii_mailroom_cart');
+            closeCartModal();
+            renderCatalog();
+            updateCartBadge();
+        }
+
+        function openAddItemModal() {
+            document.getElementById('add-item-modal').classList.remove('hidden');
+        }
+
+        function closeAddItemModal() {
+            document.getElementById('add-item-modal').classList.add('hidden');
+            document.getElementById('new-item-name').value = '';
+            document.getElementById('new-item-stock').value = '';
+            document.getElementById('new-item-image').value = '';
+        }
+
+        function handleAddNewItem(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-item-name').value.trim();
+            const stock = parseInt(document.getElementById('new-item-stock').value);
+            const imageInput = document.getElementById('new-item-image');
+
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveNewItem(name, stock, e.target.result);
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                saveNewItem(name, stock, '');
+            }
+        }
+
+        function saveNewItem(name, stock, image) {
+            const newItem = {
+                id: inventory.length > 0 ? Math.max(...inventory.map(i => i.id)) + 1 : 1,
+                name,
+                stock,
+                image
+            };
+            inventory.push(newItem);
+            localStorage.setItem('cwtii_mailroom_inventory', JSON.stringify(inventory));
+            closeAddItemModal();
+            renderCatalog();
+            alert('Barang baru berhasil ditambahkan!');
+        }
+
+        function exportReport() {
+            let csv = "ID,Nama Barang,Stok Tersedia\n";
+            inventory.forEach(i => {
+                csv += `"${i.id}","${i.name}",${i.stock}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory_report_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+    </script>
+</body>
+</html>
